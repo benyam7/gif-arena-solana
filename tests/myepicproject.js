@@ -28,15 +28,20 @@ const main = async () => {
   let account = await program.account.baseAccount.fetch(baseAccount.publicKey); // retrieve the account we created
   console.log("👀 GIF Count", account.totalGifs.toString());
 
-  const tx2 = await program.rpc.addGif({
-    accounts: {
-      baseAccount: baseAccount.publicKey,
-    },
-  });
+  const tx2 = await program.rpc.addGif(
+    "https://giphy.com/clips/sleep-good-morning-wake-up-SqBgrlwX9NKONmGpJ1",
+    {
+      accounts: {
+        baseAccount: baseAccount.publicKey,
+        user: provider.wallet.publicKey,
+      },
+    }
+  );
   // get the account again(cuz remember we're storing state in `accounts` in solana) to see what changed
   account = await program.account.baseAccount.fetch(baseAccount.publicKey);
 
   console.log("👀 GIF Count", account.totalGifs.toString());
+  console.log("👀 GIF List", account.gifList);
 };
 
 const runMain = async () => {

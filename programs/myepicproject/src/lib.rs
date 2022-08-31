@@ -15,11 +15,22 @@ pub mod myepicproject {
         Ok(())
     }
 
-    pub fn add_gif(ctx: Context<AddGif>) -> Result <()>{
+    pub fn add_gif(ctx: Context<AddGif>, gif_link: String) -> Result <()>{
         let base_account = &mut ctx.accounts.base_account;
-        base_account.total_gifs = base_account.total_gifs + 1;
+        let user = &mut ctx.accounts.user;
+
+        // build the struct
+        let item = ItemStruct {
+            gif_link: gif_link.to_string(),
+            user_address: *user.to_account_info().key,
+        };
+
+        // add it to the gif_list vector
+        base_account.gif_list.push(item);
+        base_account.total_gifs += 1;
         Ok(())
     }
+
 }
 
 // Attach certain variables to the StartStuffOff context . here we actually specify how to initialize it(account) and what to hold in our StartStuffOff context. We're setting the constraints.
@@ -41,7 +52,17 @@ pub struct StartStuffOff<'info> {
 #[derive(Accounts)]
 pub struct AddGif<'info> {
     #[account(mut)]
-    pub base_account: Account<'info, BaseAccount>
+    pub base_account: Account<'info, BaseAccount>,
+    // add siginer who calls te AddGif method to the struct so that we can save it.
+    #[account(mut)]
+    pub user: Signer<'info>,
+}
+
+// create a custom struct for us to work with
+#[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)] // basically tells anchor on how to serialize/deserialize the struct. remember `account` is a file, so we serialize our data to binary format before storing it, then deserialize when retrieving it.
+pub struct ItemStruct {
+    pub gif_link: String,
+    pub user_address: Pubkey,
 }
 
 // Tell Solanaa what we want to store on this account.
@@ -49,6 +70,8 @@ pub struct AddGif<'info> {
 #[account]
 pub struct BaseAccount {
     pub total_gifs: u64,
+    // attach a vector of type ItemStruct to the account
+    pub gif_list: Vec<ItemStruct>,
 }
 
 
