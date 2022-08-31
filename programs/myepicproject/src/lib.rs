@@ -8,11 +8,33 @@ pub mod myepicproject {
     use super::*;
     // a fun that takes context and outputs Result.
     pub fn start_stuff_off(ctx: Context<StartStuffOff>) -> Result <()>  { 
+          // Get a reference to the account
+          let base_account = &mut ctx.accounts.base_account; // `&mut` gives us to make `changes` to `base_account`, otherwise we'd simply be workin w/ a "local copy" of `base_account`
+          // initilize total_gifs
+          base_account.total_gifs = 0; 
         Ok(())
     }
 }
 
+// Attach certain variables to the StartStuffOff context . here we actually specify how to initialize it(account) and what to hold in our StartStuffOff context. We're setting the constraints.
 #[derive(Accounts)] // another macro here. we'll bsically be able to specify different account constraints.
-pub struct StartStuffOff {}
+pub struct StartStuffOff<'info> {
+    // we're telling we need "9000 kilobytes" for our program to run. the more the logic our program has, the more space it requires.
+    // `init` : will tell Solana to create a new account owned by our current program
+    // `payer` = `user` tell our program who's `paying` for the account to be created. in this case, it's the `user` calling the function.
+    // `space = 9000`: allocates 9000 bytes of space for the account. Storing in Solana aint free. Users will pay 'rent' and if you don't 'validators' will clear the account!
+    #[account(init, payer = user, space = 9000)]  // All we're doing here is tellin Solana how we want to initialize `BaseAccount`
+    pub base_account: Account<'info, BaseAccount>,
+    #[account(mut)]
+    pub user: Signer<'info>,  // is data passed into the program that proves to the program that the user calling this program actually owns their wallet account.
+    pub system_program: Program <'info, System>, // is refference to the `SystemProgram` which is a the program that basically runs Solan. it does lots of suff but one of main is `to create accounts`. has an id of 11111111111111111111111111111111
+}
+
+// Tell Solanaa what we want to store on this account.
+// Basically, tell our program what kind of account it can make and what to hold inside of it. So, `BaseAccount` holds and integer named `total_gifs`
+#[account]
+pub struct BaseAccount {
+    pub total_gifs: u64,
+}
 
  
