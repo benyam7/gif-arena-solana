@@ -14,6 +14,12 @@ pub mod myepicproject {
           base_account.total_gifs = 0; 
         Ok(())
     }
+
+    pub fn add_gif(ctx: Context<AddGif>) -> Result <()>{
+        let base_account = &mut ctx.accounts.base_account;
+        base_account.total_gifs = base_account.total_gifs + 1;
+        Ok(())
+    }
 }
 
 // Attach certain variables to the StartStuffOff context . here we actually specify how to initialize it(account) and what to hold in our StartStuffOff context. We're setting the constraints.
@@ -30,11 +36,20 @@ pub struct StartStuffOff<'info> {
     pub system_program: Program <'info, System>, // is refference to the `SystemProgram` which is a the program that basically runs Solan. it does lots of suff but one of main is `to create accounts`. has an id of 11111111111111111111111111111111
 }
 
+// here we're creatin a `Context` named `AddGif` that has access to a mutable reference to `base_account`. if not mutable access, i may change data on my function but not change on account.
+// so, `Context` is like something that can give access to what we want the user to do with our account state.(my explanation 😅)
+#[derive(Accounts)]
+pub struct AddGif<'info> {
+    #[account(mut)]
+    pub base_account: Account<'info, BaseAccount>
+}
+
 // Tell Solanaa what we want to store on this account.
 // Basically, tell our program what kind of account it can make and what to hold inside of it. So, `BaseAccount` holds and integer named `total_gifs`
 #[account]
 pub struct BaseAccount {
     pub total_gifs: u64,
 }
+
 
  

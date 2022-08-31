@@ -27,6 +27,16 @@ const main = async () => {
   // fetch data from the account.
   let account = await program.account.baseAccount.fetch(baseAccount.publicKey); // retrieve the account we created
   console.log("👀 GIF Count", account.totalGifs.toString());
+
+  const tx2 = await program.rpc.addGif({
+    accounts: {
+      baseAccount: baseAccount.publicKey,
+    },
+  });
+  // get the account again(cuz remember we're storing state in `accounts` in solana) to see what changed
+  account = await program.account.baseAccount.fetch(baseAccount.publicKey);
+
+  console.log("👀 GIF Count", account.totalGifs.toString());
 };
 
 const runMain = async () => {
