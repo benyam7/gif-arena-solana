@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*; // we're sorta importing useful stuff from anchor
 
-declare_id!("8YehNCR8UvUeFqiYuSVwoQ6xX25RjACGNzk2bQMEQS8y");  // program id and has info for solana on how to run our program. Anchor has generated this for us.
+declare_id!("8YehNCR8UvUeFqiYuSVwoQ6xX25RjACGNzk2bQMEQS8y");  // program id and has info for solana on how to run our program. Anchor has generated this for us(first time, now it's ours lol).
 
 #[program] // they called macros(they basically attach code to our module. like inhertitance) sorta -> everything in this little module below is our program that we want to create handlers for that other people can call.essentially this lets us actually call our Solana program from our frontend via a fetch request.
 // "pub mod" : is Rust module (kinda like class/contract) where u can define vars and functions. and we named it myepicproject.
@@ -19,10 +19,19 @@ pub mod myepicproject {
         let base_account = &mut ctx.accounts.base_account;
         let user = &mut ctx.accounts.user;
 
+        let gif_id = &mut 1;
+        if base_account.gif_list.is_empty() {
+            *gif_id = 0;
+        }else {
+            *gif_id = base_account.gif_list.len();
+        }
+
         // build the struct
         let item = ItemStruct {
             gif_link: gif_link.to_string(),
             user_address: *user.to_account_info().key,
+            id: *gif_id as u64, // so first item, will have an id of zero like index.
+            vote_count: 0,
         };
 
         // add it to the gif_list vector
@@ -31,11 +40,22 @@ pub mod myepicproject {
         Ok(())
     }
 
+    pub fn vote_for_gif(ctx: Context<VoteGif>, gif_id: u64) -> Result <()> {
+        let base_account = &mut ctx.accounts.base_account;
+        let gif_list = &mut base_account.gif_list;
+
+        for i in 0..gif_list.len(){
+            if gif_id == gif_list[i].id {
+                gif_list[i].vote_count += 1; 
+            }
+        };
+        Ok(())
+    }
+
 }
 
-// Attach certain variables to the StartStuffOff context . here we actually specify how to initialize it(account) and what to hold in our StartStuffOff context. We're setting the constraints.
 #[derive(Accounts)] // another macro here. we'll bsically be able to specify different account constraints.
-pub struct StartStuffOff<'info> {
+pub struct StartStuffOff<'info> {// Attach certain variables to the StartStuffOff context . here we actually specify how to initialize it(account) and what to hold in our StartStuffOff context. We're setting the constraints.
     // we're telling we need "9000 kilobytes" for our program to run. the more the logic our program has, the more space it requires.
     // `init` : will tell Solana to create a new account owned by our current program
     // `payer` = `user` tell our program who's `paying` for the account to be created. in this case, it's the `user` calling the function.
@@ -44,10 +64,10 @@ pub struct StartStuffOff<'info> {
     pub base_account: Account<'info, BaseAccount>,
     #[account(mut)]
     pub user: Signer<'info>,  // is data passed into the program that proves to the program that the user calling this program actually owns their wallet account.
-    pub system_program: Program <'info, System>, // is refference to the `SystemProgram` which is a the program that basically runs Solan. it does lots of suff but one of main is `to create accounts`. has an id of 11111111111111111111111111111111
+    pub system_program: Program <'info, System>, // is refference to the `SystemProgram` which is a the program that basically runs Solana. it does lots of suff but one of main is `to create accounts`. has an id of 11111111111111111111111111111111
 }
 
-// here we're creatin a `Context` named `AddGif` that has access to a mutable reference to `base_account`. if not mutable access, i may change data on my function but not change on account.
+// here we're creatin a `Context` named `AddGif` that has access to a mutable reference to `base_account`. if not mutable access, it may change data on my function but not change on account.
 // so, `Context` is like something that can give access to what we want the user to do with our account state.(my explanation 😅)
 #[derive(Accounts)]
 pub struct AddGif<'info> {
@@ -58,11 +78,19 @@ pub struct AddGif<'info> {
     pub user: Signer<'info>,
 }
 
+#[derive(Accounts)]
+pub struct VoteGif<'info> {
+    #[account(mut)]
+    pub base_account: Account<'info, BaseAccount>
+}
+
 // create a custom struct for us to work with
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)] // basically tells anchor on how to serialize/deserialize the struct. remember `account` is a file, so we serialize our data to binary format before storing it, then deserialize when retrieving it.
 pub struct ItemStruct {
     pub gif_link: String,
     pub user_address: Pubkey,
+    pub id: u64,
+    pub vote_count: u64,
 }
 
 // Tell Solanaa what we want to store on this account.

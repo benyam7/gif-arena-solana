@@ -7,7 +7,7 @@ const main = async () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider); // tell Anchor to set our provider. So, it gets this data from `solana config get`. in this case, it's grabbing our local env. This way Anchor knows to run our code locally.
 
-  const program = anchor.workspace.Myepicproject; // this super cool thing given to us by Anchor that will automatically compile our code in lib.rs and get it deployed locallly on a local `validator`. Al lot of magic in one line.
+  const program = anchor.workspace.Myepicproject; // this super cool thing given to us by Anchor that will automatically compile our code in lib.rs and get it deployed locally on a local `validator`. A lot of magic in one line.
   // Naming + folder strucure is mega mportant here. Ex: anchor know to look at `programs/myepicproject/src/lib.rs` b/c we used `anchor.workspace.Myepicproject` . So, you need to captilize the first letter(that what i thought)
 
   // create an account keypair for our program to use.
@@ -37,11 +37,51 @@ const main = async () => {
       },
     }
   );
+
+  await program.rpc.addGif(
+    "https://giphy.com/clips/sleep-good-morning-wake-up-SqBgrlwX9NKONmGpJ1",
+    {
+      accounts: {
+        baseAccount: baseAccount.publicKey,
+        user: provider.wallet.publicKey,
+      },
+    }
+  );
+
+  await program.rpc.addGif(
+    "https://giphy.com/clips/sleep-good-morning-wake-up-SqBgrlwX9NKONmGpJ1",
+    {
+      accounts: {
+        baseAccount: baseAccount.publicKey,
+        user: provider.wallet.publicKey,
+      },
+    }
+  );
   // get the account again(cuz remember we're storing state in `accounts` in solana) to see what changed
   account = await program.account.baseAccount.fetch(baseAccount.publicKey);
 
   console.log("👀 GIF Count", account.totalGifs.toString());
   console.log("👀 GIF List", account.gifList);
+  console.log(
+    "👀 Vote count for first gif",
+    account.gifList[0].voteCount.toNumber()
+  );
+
+  const tx3 = await program.rpc.voteForGif(new anchor.BN(1), {
+    accounts: {
+      baseAccount: baseAccount.publicKey,
+      user: provider.wallet.publicKey,
+    },
+  });
+
+  account = await program.account.baseAccount.fetch(baseAccount.publicKey);
+
+  console.log("👀 GIF Count", account.totalGifs.toString());
+  console.log("👀 GIF List", account.gifList);
+  console.log(
+    "👀 Vote count for first gif after voting for first gif",
+    account.gifList[0].voteCount.toNumber()
+  );
 };
 
 const runMain = async () => {
