@@ -1,5 +1,11 @@
 const anchor = require("@project-serum/anchor");
-const { SystemProgram } = anchor.web3;
+const { mintTo } = require("@solana/spl-token");
+const { SystemProgram, Connection, clusterApiUrl, LAMPORTS_PER_SOL, Keypair } =
+  anchor.web3;
+const splToken = require("@solana/spl-token");
+const { min } = require("bn.js");
+const { createMint, getMint, getOrCreateAssociatedTokenAccount, getAccount } =
+  splToken;
 
 const main = async () => {
   console.log("🚀 Starting test...");
@@ -9,7 +15,7 @@ const main = async () => {
 
   const program = anchor.workspace.Myepicproject; // this super cool thing given to us by Anchor that will automatically compile our code in lib.rs and get it deployed locally on a local `validator`. A lot of magic in one line.
   // Naming + folder strucure is mega mportant here. Ex: anchor know to look at `programs/myepicproject/src/lib.rs` b/c we used `anchor.workspace.Myepicproject` . So, you need to captilize the first letter(that what i thought)
-
+  console.log(program, "program");
   // create an account keypair for our program to use.
   const baseAccount = anchor.web3.Keypair.generate();
 
@@ -82,6 +88,37 @@ const main = async () => {
     "👀 Vote count for first gif after voting for first gif",
     account.gifList[0].voteCount.toNumber()
   );
+
+  // request lamport for the senderAccount
+  const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+
+  const senderAccount = anchor.web3.Keypair.generate();
+  const recieverAccount = anchor.web3.Keypair.generate();
+
+  const reqAirdropSignature = await connection.requestAirdrop(
+    senderAccount.publicKey,
+    2 * LAMPORTS_PER_SOL
+  );
+
+  console.log("req tx", reqAirdropSignature);
+
+  await connection.confirmTransaction(reqAirdropSignature);
+
+  const airdropedBalance = await connection.getBalance(senderAccount.publicKey);
+  console.log("balance airdropped", airdropedBalance);
+
+  await program.rpc.tipGifYouLikeSomeSol(new anchor.BN(100), {
+    accounts: {
+      to: recieverAccount.publicKey,
+      from: senderAccount.publicKey,
+
+      systemProgram: SystemProgram.programId,
+    },
+    signers: [senderAccount],
+  });
+
+  const recievedSOL = await connection.getBalance(recieverAccount.publicKey);
+  console.log("recievedSol", recievedSOL);
 };
 
 const runMain = async () => {
