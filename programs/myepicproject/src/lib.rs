@@ -52,6 +52,19 @@ pub mod myepicproject {
         Ok(())
     }
 
+    pub fn tip_gif_you_like_some_sol(ctx: Context<TipGifYouLikeSomeSol>, amount_in_lamports: u64) -> Result <()>{
+        let ix = anchor_lang::solana_program::system_instruction::transfer(&ctx.accounts.from.key(), &ctx.accounts.to.key(), amount_in_lamports);
+        anchor_lang::solana_program::program::invoke(
+            &ix,
+            &[
+                ctx.accounts.from.to_account_info(),
+                ctx.accounts.to.to_account_info()
+            ]
+        );
+
+        Ok(())
+    }
+
 }
 
 #[derive(Accounts)] // another macro here. we'll bsically be able to specify different account constraints.
@@ -60,7 +73,7 @@ pub struct StartStuffOff<'info> {// Attach certain variables to the StartStuffOf
     // `init` : will tell Solana to create a new account owned by our current program
     // `payer` = `user` tell our program who's `paying` for the account to be created. in this case, it's the `user` calling the function.
     // `space = 9000`: allocates 9000 bytes of space for the account. Storing in Solana aint free. Users will pay 'rent' and if you don't 'validators' will clear the account!
-    #[account(init, payer = user, space = 9000)]  // All we're doing here is tellin Solana how we want to initialize `BaseAccount`
+    #[account(init, payer = user, space = 10240)]  // All we're doing here is tellin Solana how we want to initialize `BaseAccount`
     pub base_account: Account<'info, BaseAccount>,
     #[account(mut)]
     pub user: Signer<'info>,  // is data passed into the program that proves to the program that the user calling this program actually owns their wallet account.
@@ -82,6 +95,17 @@ pub struct AddGif<'info> {
 pub struct VoteGif<'info> {
     #[account(mut)]
     pub base_account: Account<'info, BaseAccount>
+}
+
+#[derive(Accounts)]
+pub struct TipGifYouLikeSomeSol<'info> {
+    #[account(mut)]
+    pub from: Signer<'info>,
+    /// CHECK: this is not dangerous because we're on devnet. 😅
+    #[account(mut)]
+    pub to: AccountInfo<'info> ,
+    pub system_program: Program<'info, System>
+
 }
 
 // create a custom struct for us to work with
